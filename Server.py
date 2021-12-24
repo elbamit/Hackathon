@@ -2,6 +2,7 @@ import socket
 import time
 from datetime import datetime
 #from scapy.arch import get_if_addr
+from random import random
 from threading import Thread
 
 
@@ -56,10 +57,6 @@ class Server:
                 print("player 2 connected")
 
 
-
-
-
-
     def broadcast(self):
         print("Server started, listening on IP address " + self.ip)
         while not self.all_clients_connected:
@@ -71,20 +68,37 @@ class Server:
             time.sleep(1)
 
 
+    def start_server(self):
+    # if __name__ == "__main__":
+    #     server = Server(18121)
+        t1 = Thread(target=self.broadcast, daemon=True)
+        t2 = Thread(target=self.waiting_for_clients, daemon=True)
 
-if __name__ == "__main__":
-    server = Server(18121)
-    t1 = Thread(target=server.broadcast, daemon=True)
-    t2 = Thread(target=server.waiting_for_clients, daemon=True)
+        t1.start()
+        t2.start()
 
-    t1.start()
-    t2.start()
+        t1.join()
+        t2.join()
 
-    t1.join()
-    t2.join()
+        # after 2 clients connected to server, we start 10 sec countdown
+        time.sleep(4) #TODO: change back to 10 sec
+        self.game_mode()
+        print(self.player1_name)
+        print(self.player2_name)
 
-    print(server.player1_name)
-    print(server.player2_name)
+    def game_mode(self):
+
+        number1 = random.randint(0, 9)
+        number2 = 9 - number1
+        #send welcome to game
+        welcome_msg = "Welcome to Quick Maths.\n" \
+                      "Player 1: " + self.player1_name + "\n" \
+                      "Player 2: Rocket " + self.player2_name + "\n " \
+                      "==" \
+                      "Please answer the following question as fast as you can:" \
+                      "How much is " + str(number1) + "+" + str(number2) + "?"
+        self.player1_conn.send(bytes(welcome_msg, 'UTF-8'))
+        self.player2_conn.send(bytes(welcome_msg, 'UTF-8'))
 
 
 

@@ -5,6 +5,7 @@ class Client:
         self.tcp_port = None
         self.server_ip = None
 
+        #TODO: need to verify the client team name
         self.team_name = 'AmiTamar_Client'
 
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -21,7 +22,6 @@ class Client:
 
 
     def find_server(self):
-        print("shahar")
 
         while not self.found_server:
             print("Client started, listening for offer requests...")
@@ -41,10 +41,8 @@ class Client:
                 self.tcp_port = int(rcv_tcp_port, 16)
                 self.server_ip = address[0]
 
-            print("Received offer from " + str(address[0]) + ", attempting to connect...")
+            print("Received offer from " + str(address[0]) + ", attempting to connect...\n")
             self.found_server = True
-
-
 
 
     def connect_to_server(self):
@@ -53,8 +51,14 @@ class Client:
         team_name_msg = bytes(self.team_name, 'UTF-8')
         self.tcp_socket.send(team_name_msg)
 
-if __name__ == "__main__":
-    client = Client()
-    client.find_server()
-    client.connect_to_server()
-    print("connect to a server")
+    def start_client(self):
+    # if __name__ == "__main__":
+        self.find_server()
+        self.connect_to_server()
+        self.game_mode()
+
+    def game_mode(self):
+        opening_msg, address = self.tcp_socket.recv(1024)
+        print(opening_msg.decode('UTF-8'))
+        answer = input()
+        self.tcp_socket.send(bytes(answer, 'UTF-8'))
