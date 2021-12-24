@@ -1,6 +1,9 @@
 import socket
+import time
 from datetime import datetime
 #from scapy.arch import get_if_addr
+from threading import Thread
+
 
 class Server:
     link_proto = 'eth1'
@@ -19,28 +22,70 @@ class Server:
         self.ip = socket.gethostbyname(socket.gethostname())
 
         self.broad_msg = self.magicCookie.to_bytes(byteorder='big', length=4) + self.message_type.to_bytes(byteorder='big', length=1) + self.tcp_port.to_bytes(byteorder='big', length=2)
-        self.player1 = None
+
+        self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcp_socket.bind(("", self.tcp_port))
+
+        self.all_clients_connected = False
+        self.player1_conn = None
+        self.player2_conn = None
+        self.player1_name = None
+        self.player2_name = None
         print(self.ip)
 
 
 
     def waiting_for_clients(self):
+        self.tcp_socket.listen(2)
+
+
+        while not self.all_clients_connected:
+            player_conn, player_addr = self.tcp_socket.accept()
+            player_name = player_conn.recv(1024)
+
+            if self.player1_conn is None:
+                self.player1_conn = player_conn
+                self.player1_name = player_name.decode('UTF-8')
+                print("player 1 connected")
+                continue
+
+            elif self.player2_conn is None:
+                self.player2_conn = player_conn
+                self.player2_name = player_name.decode('UTF-8')
+                self.all_clients_connected = True
+                print("player 2 connected")
+
+
+
+
 
 
     def broadcast(self):
         print("Server started, listening on IP address " + self.ip)
-        while True:
-
+        while not self.all_clients_connected:
             #TODO change IP to SUBNET + 255.255
             #Broadcast itself
             self.broad_socket.sendto(self.broad_msg, ('255.255.255.255', self.udp_port))
 
+            #Free's CPU for 1 second
+            time.sleep(1)
 
 
 
-server = Server(18121)
-server.broadcast()
-        
+if __name__ == "__main__":
+    server = Server(18121)
+    t1 = Thread(target=server.broadcast, daemon=True)
+    t2 = Thread(target=server.waiting_for_clients, daemon=True)
+
+    t1.start()
+    t2.start()
+
+    t1.join()
+    t2.join()
+
+    print(server.player1_name)
+    print(server.player2_name)
+
 
 
 
