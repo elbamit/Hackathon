@@ -1,9 +1,11 @@
 import socket
 import time
-from datetime import datetime
-#from scapy.arch import get_if_addr
-from random import random
-from threading import Thread
+from queue import Queue
+from random import randint
+from threading import Thread, Event
+
+
+
 
 
 class Server:
@@ -67,6 +69,18 @@ class Server:
             #Free's CPU for 1 second
             time.sleep(1)
 
+    def get_answer(self, player_conn, stop_event, queue):
+
+        while not stop_event.is_set():
+            answer = player_conn.recv(1024)
+
+            if answer is not None:
+                stop_event.set()
+                queue.put(answer)
+                break
+
+
+
 
     def start_server(self):
     # if __name__ == "__main__":
@@ -81,24 +95,45 @@ class Server:
         t2.join()
 
         # after 2 clients connected to server, we start 10 sec countdown
-        time.sleep(4) #TODO: change back to 10 sec
+        time.sleep(2) #TODO: change back to 10 sec
         self.game_mode()
         print(self.player1_name)
         print(self.player2_name)
 
     def game_mode(self):
 
-        number1 = random.randint(0, 9)
+        number1 = randint(0, 9)
         number2 = 9 - number1
         #send welcome to game
         welcome_msg = "Welcome to Quick Maths.\n" \
                       "Player 1: " + self.player1_name + "\n" \
-                      "Player 2: Rocket " + self.player2_name + "\n " \
-                      "==" \
-                      "Please answer the following question as fast as you can:" \
-                      "How much is " + str(number1) + "+" + str(number2) + "?"
+                      "Player 2: " + self.player2_name + "\n " \
+                      "==\n" \
+                      "Please answer the following question as fast as you can:\n" \
+                      "How much is " + str(number1) + "+" + str(number2) + "?\n"
         self.player1_conn.send(bytes(welcome_msg, 'UTF-8'))
         self.player2_conn.send(bytes(welcome_msg, 'UTF-8'))
+
+        queue = Queue()
+        stop_event = Event()
+
+        t1 = Thread(target=self.get_answer, args=[self.player1_conn, stop_event, queue], daemon=True)
+        t2 = Thread(target=self.get_answer, args=[self.player2_conn, stop_event, queue], daemon=True)
+
+        t1.start()
+        t2.start()
+
+        while not stop_event.is_set():
+            time.sleep(0.1)
+
+
+        print(queue.get())
+
+
+
+if __name__ == "__main__":
+    server = Server(18121)
+    server.start_server()
 
 
 

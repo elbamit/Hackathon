@@ -1,4 +1,8 @@
 import socket
+
+import msvcrt
+
+
 class Client:
     def __init__(self):
         self.udp_port = 13117
@@ -51,14 +55,21 @@ class Client:
         team_name_msg = bytes(self.team_name, 'UTF-8')
         self.tcp_socket.send(team_name_msg)
 
+
+    def game_mode(self):
+        opening_msg = self.tcp_socket.recv(1024)
+        print(opening_msg.decode('UTF-8'))
+        answer = msvcrt.getch()
+        self.tcp_socket.send(answer)
+
     def start_client(self):
     # if __name__ == "__main__":
         self.find_server()
         self.connect_to_server()
         self.game_mode()
 
-    def game_mode(self):
-        opening_msg, address = self.tcp_socket.recv(1024)
-        print(opening_msg.decode('UTF-8'))
-        answer = input()
-        self.tcp_socket.send(bytes(answer, 'UTF-8'))
+if __name__ == "__main__":
+    client = Client()
+    client.start_client()
+
+
