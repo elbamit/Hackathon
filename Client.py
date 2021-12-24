@@ -29,6 +29,8 @@ class Client:
 
                 print(self.tcp_port)
 
+                print("tamar")
+
 
                
             except:
