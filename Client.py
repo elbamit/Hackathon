@@ -16,6 +16,7 @@ class Client:
         i = 0
         while i< 1:
             try:
+                print("Client started, listening for offer requests...")
                 #Gets broadcast message from a server
                 data, address = self.udp_socket.recvfrom(2048)
                 rcv_magicCookie = hex(int(data.hex()[:8], 16))
@@ -26,13 +27,11 @@ class Client:
                 if rcv_magicCookie == hex(self.magicCookie) and int(rcv_message_type) == self.message_type:
                     self.tcp_port = int(rcv_tcp_port, 16)
 
-
+                print("Received offer from " + str(address[0]) + ", attempting to connect...")
                 print(self.tcp_port)
+                print(str(address))
 
-                print("tamar")
-                print("tamar")
-                print("tamar")
-                print("tamar")
+
 
 
                
