@@ -57,3 +57,4 @@ if __name__ == "__main__":
     client = Client()
     client.find_server()
     client.connect_to_server()
+    print("connect to a server")
