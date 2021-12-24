@@ -17,15 +17,19 @@ class Server:
         self.broad_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.broad_socket.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1)
         self.ip = socket.gethostbyname(socket.gethostname()) #get_if_addr(Server.link_proto) 
-        self.broad_socket.bind(('', self.udp_port))
+        print(self.ip)
+        # self.broad_socket.bind(('', self.udp_port))
 
 
     def broadcast(self):
         now = datetime.now()
         print("Server started, listening on IP address " + self.ip)
         while True:
-            #self.broad_socket.sendto('')
-            self.broad_socket.sendto(self.message_type.to_bytes(byteorder='big', length=2), ('255.255.255.255', self.udp_port))
+            broad_msg = self.magicCookie.to_bytes(byteorder='big', length=4) + self.message_type.to_bytes(byteorder='big', length=1) + self.tcp_port.to_bytes(byteorder='big', length=2)
+            
+            #TODO change IP to SUBNET + 255.255
+            #Broadcast itself
+            self.broad_socket.sendto(broad_msg, ('255.255.255.255', self.udp_port))
             # message, clientAddress = self.broad_socket.recvfrom()
 
 
