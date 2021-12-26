@@ -28,13 +28,14 @@ class Server:
 
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.bind(("", self.tcp_port))
+        # self.tcp_socket.settimeout(20)
+        #TODO: think about the timeout
 
         self.all_clients_connected = False
         self.player1_conn = None
         self.player2_conn = None
         self.player1_name = None
         self.player2_name = None
-        print(self.ip)
 
 
 
@@ -43,14 +44,16 @@ class Server:
 
 
         while not self.all_clients_connected:
+
             player_conn, player_addr = self.tcp_socket.accept()
             player_name = player_conn.recv(1024)
+
+
 
             if self.player1_conn is None:
                 self.player1_conn = player_conn
                 self.player1_conn.setblocking(False)
                 self.player1_name = player_name.decode('UTF-8')
-                print("player 1 connected")
                 continue
 
             elif self.player2_conn is None:
@@ -58,7 +61,6 @@ class Server:
                 self.player2_conn.setblocking(False)
                 self.player2_name = player_name.decode('UTF-8')
                 self.all_clients_connected = True
-                print("player 2 connected")
 
 
     def broadcast(self):
@@ -94,8 +96,6 @@ class Server:
 
 
     def start_server(self):
-    # if __name__ == "__main__":
-    #     server = Server(18121)
         t1 = Thread(target=self.broadcast, daemon=True)
         t2 = Thread(target=self.waiting_for_clients, daemon=True)
 
@@ -107,9 +107,9 @@ class Server:
 
         # after 2 clients connected to server, we start 10 sec countdown
         time.sleep(2) #TODO: change back to 10 sec
-        self.game_mode()
-        print(self.player1_name)
-        print(self.player2_name)
+        summary_msg = self.game_mode()
+        self.end_game(summary_msg)
+
 
     def game_mode(self):
 
@@ -128,8 +128,8 @@ class Server:
         queue = Queue()
         stop_event = Event()
 
-        t1 = Thread(target=self.get_answer, args=[self.player1_conn, stop_event, queue], daemon=True)
-        t2 = Thread(target=self.get_answer, args=[self.player2_conn, stop_event, queue], daemon=True)
+        t1 = Thread(target=self.get_answer, args=[self.player1_conn, stop_event, queue])
+        t2 = Thread(target=self.get_answer, args=[self.player2_conn, stop_event, queue])
 
         t1.start()
         t2.start()
@@ -137,33 +137,42 @@ class Server:
         while not stop_event.is_set():
             time.sleep(0.1)
 
+        summary_msg = "Game over!\nThe correct answer was " + str(number1+number2) + "!\n"
 
-        print("Game over!\n"
-              "The correct answer was " + str(number1+number2) + "!\n")
         if queue.empty():
-            print("Game end with draw, No one entered an answer")
-            return
+            summary_msg += "Game end with draw. No one entered an answer"
+            return summary_msg
 
         first_ans, player_conn = queue.get()
         first_ans = first_ans.decode('UTF-8')
 
         if player_conn == self.player1_conn:
             if first_ans == str(number1 + number2):
-                print("Congratulations to the winner: " + self.player1_name)
+                summary_msg += "Congratulations to the winner: " + self.player1_name
             else:
-                print("Congratulations to the winner: " + self.player2_name)
+                summary_msg += "Congratulations to the winner: " + self.player2_name
         else:
             if first_ans == str(number1 + number2):
-                print("Congratulations to the winner: " + self.player2_name)
+                summary_msg += "Congratulations to the winner: " + self.player2_name
             else:
-                print("Congratulations to the winner: " + self.player1_name)
+                summary_msg += "Congratulations to the winner: " + self.player1_name
 
 
+        return summary_msg
+
+    def end_game(self, summary_msg):
+        self.player1_conn.send(bytes(summary_msg, 'UTF-8'))
+        self.player2_conn.send(bytes(summary_msg, 'UTF-8'))
+
+        print("Game over, sending out offer requests...")
+        time.sleep(3)
+        self.tcp_socket.close()
 
 
 if __name__ == "__main__":
-    server = Server(18121)
-    server.start_server()
+    while True:
+        server = Server(18121)
+        server.start_server()
 
 
 

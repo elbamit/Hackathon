@@ -1,4 +1,5 @@
 import socket
+import time
 
 import msvcrt
 
@@ -52,6 +53,7 @@ class Client:
     def connect_to_server(self):
         self.tcp_socket.connect((self.server_ip, self.tcp_port))
 
+        #TODO: levarer if user inputs the team_name or it is a fixed name
         team_name_msg = bytes(self.team_name, 'UTF-8')
         self.tcp_socket.send(team_name_msg)
 
@@ -59,6 +61,7 @@ class Client:
     def game_mode(self):
         opening_msg = self.tcp_socket.recv(1024)
         print(opening_msg.decode('UTF-8'))
+        #TODO: make sure to close the thread if the client didnt enter inputs or if other client was faster
         answer = msvcrt.getch()
         self.tcp_socket.send(answer)
 
@@ -67,9 +70,18 @@ class Client:
         self.find_server()
         self.connect_to_server()
         self.game_mode()
+        self.end_game()
+
+    def end_game(self):
+        msg = self.tcp_socket.recv(1024).decode('UTF-8')
+        print(msg)
+        self.tcp_socket.close()
+        print("Server disconnected, listening for offer requests...")
+
 
 if __name__ == "__main__":
-    client = Client()
-    client.start_client()
+    while True:
+        client = Client()
+        client.start_client()
 
 
