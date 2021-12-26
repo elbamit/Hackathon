@@ -8,7 +8,6 @@ if __name__ == "__main__":
     t1 = Thread(target=server.start_server, daemon=True)
     t1.start()
 
-
     client1 = Client()
     client2 = Client()
     client3 = Client()
@@ -18,7 +17,6 @@ if __name__ == "__main__":
 
     tClient1.start()
     tClient2.start()
-
 
     t1.join()
 

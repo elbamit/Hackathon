@@ -48,12 +48,14 @@ class Server:
 
             if self.player1_conn is None:
                 self.player1_conn = player_conn
+                self.player1_conn.setblocking(False)
                 self.player1_name = player_name.decode('UTF-8')
                 print("player 1 connected")
                 continue
 
             elif self.player2_conn is None:
                 self.player2_conn = player_conn
+                self.player2_conn.setblocking(False)
                 self.player2_name = player_name.decode('UTF-8')
                 self.all_clients_connected = True
                 print("player 2 connected")
@@ -71,14 +73,23 @@ class Server:
 
     def get_answer(self, player_conn, stop_event, queue):
 
+        now = time.time()
+        end_game_time = now + 10
+        answer = None
         while not stop_event.is_set():
-            answer = player_conn.recv(1024)
+            try:
+                answer = player_conn.recv(1024)
+            except:
+                pass
+            curr_time = time.time() # activate timer
+            if curr_time >= end_game_time:
+                stop_event.set()
+                break
 
             if answer is not None:
                 stop_event.set()
-                queue.put(answer)
+                queue.put((answer, player_conn))
                 break
-
 
 
 
@@ -103,7 +114,7 @@ class Server:
     def game_mode(self):
 
         number1 = randint(0, 9)
-        number2 = 9 - number1
+        number2 = randint(0, 9-number1)
         #send welcome to game
         welcome_msg = "Welcome to Quick Maths.\n" \
                       "Player 1: " + self.player1_name + "\n" \
@@ -127,7 +138,26 @@ class Server:
             time.sleep(0.1)
 
 
-        print(queue.get())
+        print("Game over!\n"
+              "The correct answer was " + str(number1+number2) + "!\n")
+        if queue.empty():
+            print("Game end with draw, No one entered an answer")
+            return
+
+        first_ans, player_conn = queue.get()
+        first_ans = first_ans.decode('UTF-8')
+
+        if player_conn == self.player1_conn:
+            if first_ans == str(number1 + number2):
+                print("Congratulations to the winner: " + self.player1_name)
+            else:
+                print("Congratulations to the winner: " + self.player2_name)
+        else:
+            if first_ans == str(number1 + number2):
+                print("Congratulations to the winner: " + self.player2_name)
+            else:
+                print("Congratulations to the winner: " + self.player1_name)
+
 
 
 
