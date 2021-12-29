@@ -3,6 +3,8 @@ import time
 from queue import Queue
 from random import randint
 from threading import Thread, Event
+from struct import pack, unpack
+
 
 
 class Server:
@@ -23,10 +25,15 @@ class Server:
         # family - IVP4 addresses, type - UDP protocol
         self.broad_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
         self.broad_socket.setsockopt(socket.SOL_SOCKET,socket.SO_BROADCAST,1)
-        self.ip = socket.gethostbyname(socket.gethostname())
+
+        self.local_ip = socket.gethostbyname(socket.gethostname())
+        ip_splited = self.local_ip.split('.')
+        self.broad_ip = ip_splited[0] + '.' + ip_splited[1] + '.255.255'
+
+
 
         # Creates the message that will broadcast to clients
-        self.broad_msg = self.magicCookie.to_bytes(byteorder='big', length=4) + self.message_type.to_bytes(byteorder='big', length=1) + self.tcp_port.to_bytes(byteorder='big', length=2)
+        self.broad_msg = pack('IbH', self.magicCookie, self.message_type, self.tcp_port)
 
         # Creates the TCP socket
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,7 +78,7 @@ class Server:
 
     # Function that makes the UDP socket of the server broadcast on the subnet and "advertise" his TCP port number
     def broadcast(self):
-        print("Server started, listening on IP address " + self.ip)
+        print("Server started, listening on IP address " + self.local_ip)
 
         # Loops until 2 clients are connected
         while not self.all_clients_connected:
@@ -131,8 +138,10 @@ class Server:
                       "==\n" \
                       "Please answer the following question as fast as you can:\n" \
                       "How much is " + str(number1) + "+" + str(number2) + "?\n"
-        self.player1_conn.send(bytes(welcome_msg, 'UTF-8'))
-        self.player2_conn.send(bytes(welcome_msg, 'UTF-8'))
+
+        welcome_msg = bytes(welcome_msg, 'UTF-8')
+        self.player1_conn.send(welcome_msg)
+        self.player2_conn.send(welcome_msg)
 
         queue = Queue()
         stop_event = Event()
@@ -174,11 +183,11 @@ class Server:
 
     # Function that sets off the end game mode - sends the summary message to both clients and closes the connection
     def end_game(self, summary_msg):
-        self.player1_conn.send(bytes(summary_msg, 'UTF-8'))
-        self.player2_conn.send(bytes(summary_msg, 'UTF-8'))
+        summary_msg = bytes(summary_msg, 'UTF-8')
+        self.player1_conn.send(summary_msg)
+        self.player2_conn.send(summary_msg)
 
         print("Game over, sending out offer requests...")
-        time.sleep(3) # TODO: check what can we do instead of that sleep so connection is not closed before both clients answer
         self.tcp_socket.close()
 
     # Function that makes the server broadcast, accept clients, play a game and quit the game neatly
