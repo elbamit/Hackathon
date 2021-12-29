@@ -38,8 +38,6 @@ class Server:
         # Creates the TCP socket
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.bind(("", self.tcp_port))
-        # self.tcp_socket.settimeout(20)
-        # TODO: think about the timeout
 
         self.all_clients_connected = False
         self.player1_conn = None
@@ -66,7 +64,6 @@ class Server:
                 # The connection is set to non-blocking - very important for get_answer() function
                 self.player1_conn.setblocking(False)
                 self.player1_name = player_name.decode('UTF-8')
-                print(self.player1_name)
                 continue
 
             # Connects player 2
@@ -75,7 +72,6 @@ class Server:
                 # The connection is set to non-blocking - very important for get_answer() function
                 self.player2_conn.setblocking(False)
                 self.player2_name = player_name.decode('UTF-8')
-                print(self.player2_name)
                 self.all_clients_connected = True
 
     # Function that makes the UDP socket of the server broadcast on the subnet and "advertise" his TCP port number
@@ -207,7 +203,7 @@ class Server:
         t2.join()
 
         # 10 seconds countdown after both clients are connected
-        time.sleep(2) #TODO: change back to 10 sec
+        time.sleep(10) 
 
         # Game mode - Runs the game and returns a summary message with the correct answer and which player won
         summary_msg = self.game_mode()
@@ -217,9 +213,6 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server()
-    server.start_server()
-
-
-
-
+        while True:
+            server = Server()
+            server.start_server()
