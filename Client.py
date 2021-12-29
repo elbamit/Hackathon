@@ -1,8 +1,7 @@
 import socket
 import time
 from struct import pack, unpack
-# import msvcrt
-# import getch
+
 
 
 class Client:
@@ -63,8 +62,6 @@ class Client:
 
         self.tcp_socket.connect((self.server_ip, self.tcp_port))
 
-        # TODO: levarer if user inputs the team_name or it is a fixed name
-
         # Sends to the server the client's team name
         team_name_msg = bytes(self.team_name, 'UTF-8')
         self.tcp_socket.send(team_name_msg)
@@ -120,18 +117,15 @@ class Client:
 
     # Function that makes the client find a server, connect to it, play the game then exit it and closes the connection
     def start_client(self):
-        while True:
-            self.find_server()
-            if self.found_server:
-                break
+        self.find_server()
         self.connect_to_server()
         self.game_mode()
         self.end_game()
-
-
+                
+           
 if __name__ == "__main__":
-    # while True:
-    client = Client()
-    client.start_client()
+    while True:
+        client = Client()
+        client.start_client()
 
 
